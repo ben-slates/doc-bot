@@ -3,10 +3,10 @@ import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = os.getenv("8798895118:AAGHXx_PuEvFzlBgU5cZYx6EJnXTbbTmwrg")
 
 documents = {
-    "1": {"name": "Sample PDF", "file": "https://example.com/sample.pdf", "price": 10}
+    "1": {"name": "Sample PDF", "file": "https://example.com/sample.pdf", "price": "1$"}
 }
 
 user_state = {}
