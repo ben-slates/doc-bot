@@ -17,21 +17,33 @@ WALLET_ADDRESS = "0x989a496a3d539e605e7513b8195221e100f76754"
 # ---------------- DOCUMENT DATABASE ---------------- #
 
 documents = {
-    "1": {
-        "name": "Interpreter",
+    "Interpreter": {
         "file_path": "documents/interpreter.pdf",
-        "price": 1
+        "price": 1,
+        "available": True,
+        "password": "inter@preter"
     },
-    "2": {
-        "name": "Pirates",
+
+    "Pirates": {
         "file_path": "documents/pirates.pdf",
-        "price": 1
+        "price": 1,
+        "available": True,
+        "password": "Pr@tes21"
     },
-    "3": {
-        "name": "Wingdata",
+
+    "Wingdata": {
         "file_path": "documents/wingdata.pdf",
-        "price": 1
+        "price": 1,
+        "available": False,
+        "password": ""
     },
+
+    "Walkthrough": {
+        "file_path": "documents/walkthrough.pdf",
+        "price": 1,
+        "available": False,
+        "password": ""
+    }
 }
 
 user_state = {}
@@ -89,6 +101,7 @@ keyboard = [
 
 reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
+
 # ---------------- COMMANDS ---------------- #
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -101,7 +114,7 @@ Steps to buy:
 2️⃣ Select document
 3️⃣ Send payment
 4️⃣ Send TXID
-5️⃣ Receive file
+5️⃣ Receive file + password
 """
 
     await update.message.reply_text(text, reply_markup=reply_markup)
@@ -113,7 +126,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 How to use:
 
 1. Click 📄 Documents
-2. Select document number
+2. Select document
 3. Send payment
 4. Send TXID
 
@@ -127,14 +140,19 @@ Commands:
     await update.message.reply_text(text)
 
 
+# ---------------- DOCUMENT LIST ---------------- #
+
 async def list_docs(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = "📄 Available Documents:\n\n"
 
-    for doc_id, doc in documents.items():
-        text += f"{doc_id}. {doc['name']} — {doc['price']} USDT\n"
+    for name, doc in documents.items():
 
-    text += "\nReply with document number."
+        status = "✅ Available" if doc["available"] else "❌ Unavailable"
+
+        text += f"• {name} — {doc['price']} USDT ({status})\n"
+
+    text += "\nType document name to buy."
 
     await update.message.reply_text(text)
 
@@ -147,11 +165,11 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No active order.")
         return
 
-    doc_id = user_state[user_id]["doc"]
-    doc = documents[doc_id]
+    doc_name = user_state[user_id]["doc"]
+    doc = documents[doc_name]
 
     await update.message.reply_text(
-        f"Selected document:\n{doc['name']}\nPrice: {doc['price']} USDT"
+        f"Selected document:\n{doc_name}\nPrice: {doc['price']} USDT"
     )
 
 
@@ -177,9 +195,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # selecting document
     if text in documents:
 
-        user_state[user_id] = {"doc": text}
-
         doc = documents[text]
+
+        if not doc["available"]:
+            await update.message.reply_text("❌ This document is currently unavailable.")
+            return
+
+        user_state[user_id] = {"doc": text}
 
         await update.message.reply_text(
             f"Send {doc['price']} USDT (BEP20 BSC)\n\nWallet:\n{WALLET_ADDRESS}\n\nThen send TXID."
@@ -194,8 +216,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Select document first.")
             return
 
-        doc_id = user_state[user_id]["doc"]
-        doc = documents[doc_id]
+        doc_name = user_state[user_id]["doc"]
+        doc = documents[doc_name]
 
         await update.message.reply_text("Checking payment...")
 
@@ -210,11 +232,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(doc["file_path"], "rb") as f:
                 await update.message.reply_document(f)
 
-            await update.message.reply_text("Payment verified. Document sent.")
+            await update.message.reply_text(
+                f"✅ Payment verified.\n\nPassword:\n{doc['password']}"
+            )
 
         else:
 
-            await update.message.reply_text("Invalid transaction.")
+            await update.message.reply_text("❌ Invalid transaction.")
 
         return
 
